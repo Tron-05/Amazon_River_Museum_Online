@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Amazon River Voyage Museum</title>
+    <style>
+        /* --- Basic Setup & Theming --- */
+        :root {
+            --amazon-green: #2E5339;
+            --river-blue: #5C839B;
+            --wood-brown: #5C3D2E;
+            --sun-yellow: #F4D35E;
+            --light-khaki: #F5F5DC;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background-color: var(--amazon-green);
+            color: var(--light-khaki);
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevents scrollbars */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1, h2 {
+            font-family: 'Copperplate', 'Papyrus', fantasy;
+            color: var(--sun-yellow);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        
+        #museum-container {
+            width: 95vw;
+            max-width: 1200px;
+            height: 80vh;
+            border: 8px solid var(--wood-brown);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: linear-gradient(to bottom, #a2d2ff, #bde0fe, #f5f5dc); /* Sky to misty floor */
+            position: relative;
+            perspective: 1000px; /* For potential 3D effects */
+        }
+
+        /* --- Floor Styling --- */
+        .floor {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: rgba(245, 245, 220, 0.9); /* Light Khaki with transparency */
+            border-bottom: 5px solid var(--wood-brown);
+            box-sizing: border-box;
+            transition: transform 0.8s ease-in-out, opacity 0.8s ease-in-out;
+            transform-style: preserve-3d;
+            opacity: 0;
+        }
+        
+        .floor.active {
+            z-index: 10;
+            opacity: 1;
+            transform: translateZ(0);
+        }
+        
+        .floor.above {
+            transform: translateY(-100%) scale(0.8);
+            z-index: 5;
+        }
+        
+        .floor.below {
+            transform: translateY(100%) scale(0.8);
+            z-index: 5;
+        }
+        
+        /* --- Gallery & Paintings --- */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-gap: 40px;
+            padding: 60px 50px;
+            height: 100%;
+            align-items: center;
+            justify-content: space-around;
+        }
+        
+        .painting-placeholder {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background-color: #333;
+            border: 10px solid var(--wood-brown);
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #777;
+            font-size: 1.2em;
+            text-align: center;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M25 35 a5 5 0 1 1 -10 0 a5 5 0 1 1 10 0 Z M60 25 L80 45 L60 65 L40 45 Z" fill="%23555"/></svg>');
+            background-size: 20px;
+        }
+        
+        .painting-placeholder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Grid alignment for paintings on each floor */
+        #floor1 .painting-placeholder:nth-child(1) { grid-column: 1; grid-row: 1; }
+        #floor1 .painting-placeholder:nth-child(2) { grid-column: 3; grid-row: 1; }
+        #floor1 .painting-placeholder:nth-child(3) { grid-column: 5; grid-row: 1; }
+
+        #floor2 .painting-placeholder:nth-child(1) { grid-column: 2; grid-row: 1; }
+        #floor2 .painting-placeholder:nth-child(2) { grid-column: 4; grid-row: 1; }
+        
+        #floor3 .painting-placeholder:nth-child(1) { grid-column: 1; grid-row: 1; }
+        #floor3 .painting-placeholder:nth-child(2) { grid-column: 2; grid-row: 1; }
+        #floor3 .painting-placeholder:nth-child(3) { grid-column: 4; grid-row: 1; }
+        #floor3 .painting-placeholder:nth-child(4) { grid-column: 5; grid-row: 1; }
+
+        /* --- Visitor & Navigation --- */
+        #visitor {
+            width: 30px;
+            height: 30px;
+            background-color: var(--sun-yellow);
+            border-radius: 50%;
+            border: 3px solid var(--wood-brown);
+            position: absolute;
+            z-index: 100;
+            transition: left 0.1s linear, top 0.1s linear;
+            box-shadow: 0 0 10px var(--sun-yellow);
+        }
+
+        .stairs {
+            position: absolute;
+            width: 60px;
+            height: 100px;
+            background-color: rgba(92, 61, 46, 0.7);
+            border: 2px dashed var(--sun-yellow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            color: var(--sun-yellow);
+            z-index: 1; /* Below paintings but on floor */
+        }
+        .stairs-up { bottom: 5%; right: 5%; }
+        .stairs-down { top: 5%; left: 5%; }
+
+        /* --- UI & Info --- */
+        #info-panel {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: var(--wood-brown);
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            color: var(--light-khaki);
+            font-size: 1.1em;
+        }
+        
+        #info-panel b {
+            color: var(--sun-yellow);
+        }
+
+    </style>
+</head>
+<body>
+
+    <h1>The Amazon River Voyage Museum 🛶</h1>
+
+    <div id="museum-container">
+        <div id="visitor"></div>
+
+        <div id="floor1" class="floor active">
+            <div class="gallery">
+                <div class="painting-placeholder"><img src="AmazonRiverBoatTour.png" alt="A beautiful painting of the Amazon River"></div>
+                <div class="painting-placeholder">Painting 2</div>
+                <div class="painting-placeholder">Painting 3</div>
+            </div>
+            <div class="stairs stairs-up" data-target-floor="2">⬆️</div>
+            <h2>Floor 1: Portraits of the Explorer</h2>
+        </div>
+
+        <div id="floor2" class="floor below">
+            <div class="gallery">
+                <div class="painting-placeholder">Painting 4</div>
+                <div class="painting-placeholder">Painting 5</div>
+            </div>
+            <div class="stairs stairs-down" data-target-floor="1">⬇️</div>
+            <div class="stairs stairs-up" data-target-floor="3">⬆️</div>
+            <h2>Floor 2: Vessels of the Voyage</h2>
+        </div>
+
+        <div id="floor3" class="floor below">
+            <div class="gallery">
+                <div class="painting-placeholder">Painting 6</div>
+                <div class="painting-placeholder">Painting 7</div>
+                <div class="painting-placeholder">Painting 8</div>
+                <div class="painting-placeholder">Painting 9</div>
+            </div>
+            <div class="stairs stairs-down" data-target-floor="2">⬇️</div>
+            <h2>Floor 3: Heart of the Amazon</h2>
+        </div>
+    </div>
+
+    <div id="info-panel">
+        Use <b>Arrow Keys</b> to move. Current Floor: <b id="current-floor-display">1</b>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const visitor = document.getElementById('visitor');
+            const container = document.getElementById('museum-container');
+            const floors = document.querySelectorAll('.floor');
+            const floorDisplay = document.getElementById('current-floor-display');
+
+            let currentFloor = 1;
+            let visitorPos = { x: 50, y: 300 }; // Initial position
+            const speed = 10;
+            let canMove = true;
+
+            // Initialize visitor position
+            visitor.style.left = `${visitorPos.x}px`;
+            visitor.style.top = `${visitorPos.y}px`;
+
+            // Player Movement
+            document.addEventListener('keydown', (e) => {
+                if (!canMove) return;
+
+                const containerRect = container.getBoundingClientRect();
+                
+                switch(e.key) {
+                    case 'ArrowUp':
+                        visitorPos.y = Math.max(0, visitorPos.y - speed);
+                        break;
+                    case 'ArrowDown':
+                        visitorPos.y = Math.min(containerRect.height - visitor.offsetHeight, visitorPos.y + speed);
+                        break;
+                    case 'ArrowLeft':
+                        visitorPos.x = Math.max(0, visitorPos.x - speed);
+                        break;
+                    case 'ArrowRight':
+                        visitorPos.x = Math.min(containerRect.width - visitor.offsetWidth, visitorPos.x + speed);
+                        break;
+                }
+                
+                visitor.style.left = `${visitorPos.x}px`;
+                visitor.style.top = `${visitorPos.y}px`;
+                
+                checkStairs();
+            });
+
+            // Stair Navigation
+            function checkStairs() {
+                const visitorRect = visitor.getBoundingClientRect();
+                const activeFloor = document.querySelector(`.floor.active`);
+                const stairsOnCurrentFloor = activeFloor.querySelectorAll('.stairs');
+
+                stairsOnCurrentFloor.forEach(stair => {
+                    const stairRect = stair.getBoundingClientRect();
+                    // Check for collision/overlap
+                    if (
+                        visitorRect.left < stairRect.right &&
+                        visitorRect.right > stairRect.left &&
+                        visitorRect.top < stairRect.bottom &&
+                        visitorRect.bottom > stairRect.top
+                    ) {
+                        const targetFloor = parseInt(stair.dataset.targetFloor);
+                        changeFloor(targetFloor);
+                    }
+                });
+            }
+
+            // Floor Changing Logic
+            function changeFloor(targetFloor) {
+                if (currentFloor === targetFloor || !canMove) return;
+
+                canMove = false; // Disable movement during transition
+                const oldFloor = currentFloor;
+                currentFloor = targetFloor;
+                
+                floorDisplay.textContent = currentFloor;
+
+                // Position visitor at the opposite stairs on the new floor
+                if (currentFloor > oldFloor) { // Moved up
+                    const newStairs = document.querySelector(`#floor${currentFloor} .stairs-down`);
+                    const newStairsRect = newStairs.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+                    visitorPos.x = newStairsRect.left - containerRect.left + (newStairsRect.width / 2) - (visitor.offsetWidth / 2);
+                    visitorPos.y = newStairsRect.top - containerRect.top + (newStairsRect.height / 2) - (visitor.offsetHeight / 2);
+                } else { // Moved down
+                    const newStairs = document.querySelector(`#floor${currentFloor} .stairs-up`);
+                    const newStairsRect = newStairs.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+                    visitorPos.x = newStairsRect.left - containerRect.left + (newStairsRect.width / 2) - (visitor.offsetWidth / 2);
+                    visitorPos.y = newStairsRect.top - containerRect.top + (newStairsRect.height / 2) - (visitor.offsetHeight / 2);
+                }
+                
+                visitor.style.left = `${visitorPos.x}px`;
+                visitor.style.top = `${visitorPos.y}px`;
+
+                // Update floor classes for transition animation
+                floors.forEach((floor, index) => {
+                    const floorNum = index + 1;
+                    floor.classList.remove('active', 'above', 'below');
+                    if (floorNum === currentFloor) {
+                        floor.classList.add('active');
+                    } else if (floorNum < currentFloor) {
+                        floor.classList.add('above');
+                    } else {
+                        floor.classList.add('below');
+                    }
+                });
+                
+                // Re-enable movement after transition completes
+                setTimeout(() => {
+                    canMove = true;
+                }, 800); // Must match CSS transition duration
+            }
+        });
+    </script>
+</body>
+</html>
